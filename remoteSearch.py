@@ -1,6 +1,7 @@
 import optparse as opt
 import webbrowser as web
 import requests
+from urllib.parse import quote
 
 def main():
     url = "https://blog-cyberworm.com/search/"
@@ -18,7 +19,14 @@ def main():
     (options, args) = parser.parse_args()
     extension = options.extension
 
-    getStatus = requests.get(f"{url}{extension}", headers=userAgent)
+    if not extension:
+        parser.error('A search term is required (-e / --extension).')
+    target_url = url + quote(extension, safe='')
+    try:
+        getStatus = requests.get(target_url, headers=userAgent, timeout=15)
+    except requests.RequestException as exc:
+        print(f'[ERROR] Search request failed: {exc}')
+        return 1
 
     if options.extension == None:
         print(f"[!] Missing argument. Please, follow the usage.\n\n{parser.usage}")
@@ -28,11 +36,11 @@ def main():
             if "0 Sonuç Bulundu." in sourceCode or "0 Results Found" in sourceCode:
                 print(f"Not found a blog about '{extension}'.")
             else:
-                web.open(f"{url}{extension}")
+                web.open(target_url)
         else:
             print(f"Something went wrong. Status Code: '{getStatus.status_code}'")
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
 
